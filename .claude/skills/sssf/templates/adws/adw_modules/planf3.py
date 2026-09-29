@@ -97,6 +97,19 @@ def artifacts_valid(envelope, run) -> GateReport:
         for suffix in (".md", ".html"):
             report.check(f"PlanF3 specs {suffix}", any(p.parent == specs and p.suffix == suffix for p in paths),
                          f"declare the collision-free specs/ copy ending in {suffix}")
+    elif type(envelope).__name__ == "TeamPlanOutput":
+        # The team's typed plan_path determines its companion. Unrelated
+        # Markdown/HTML artifacts must not satisfy this handoff contract.
+        declared = envelope.plan_path.strip()
+        report.check("PlanF3 team plan_path", bool(declared), "plan_path must identify the team's Markdown plan")
+        if declared:
+            plan = Path(declared).expanduser()
+            plan = plan.resolve() if plan.is_absolute() else (root / plan).resolve()
+            report.check("PlanF3 team Markdown", plan in paths and plan.suffix.lower() == ".md",
+                         f"declare the Markdown plan_path {plan} in artifacts")
+            companion = plan.with_suffix(".html")
+            report.check("PlanF3 team HTML companion", companion in paths,
+                         f"declare the HTML companion beside plan_path: {companion}")
     for p in paths:
         present = p.is_file() and p.stat().st_size > 0
         report.check(str(p), present, "artifact exists and is nonempty" if present else "missing or empty artifact")

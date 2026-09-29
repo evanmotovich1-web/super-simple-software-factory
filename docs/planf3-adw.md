@@ -30,7 +30,7 @@ browser launch and optional paid image calls.
 
 The gate checks declared artifacts exist and are nonempty, requires both
 formats, and checks HTML sections/checklist and absence of template tokens.
-It verifies structure; plan quality still needs review. Markdown citation
+For company team plans, it also requires the typed `plan_path` to be the declared Markdown artifact and its exact sibling `.html` companion to be declared; unrelated documents do not satisfy the gate. It verifies structure; plan quality still needs review. Markdown citation
 checks and permission enforcement continue to run.
 
 ## Installation and maintenance
