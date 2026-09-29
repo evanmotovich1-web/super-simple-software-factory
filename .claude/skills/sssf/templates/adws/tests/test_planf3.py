@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from adw_modules import agents, planf3
-from adw_modules.data_types import AgentCall, BuildOutput, PhaseParams, PiResult, PlanOutput
+from adw_modules.data_types import AgentCall, BuildOutput, EnvelopeBase, PhaseParams, PiResult, PlanOutput
 from adw_modules.runner import Run
 from adw_modules.tracer import Tracer
 
@@ -16,6 +16,11 @@ HTML = ('<!doctype html><html><body>' + ''.join(
     f'<section id="{name}"><p>Read app.py and run pytest.</p></section>'
     for name in sorted(planf3.SECTIONS))
     + '<ul class="checklist"><li>[] Read app.py</li></ul></body></html>')
+
+
+class TeamPlanOutput(EnvelopeBase):
+    """Portable fixture for the company engine's typed plan-path contract."""
+    plan_path: str
 
 
 class PlanF3Tests(unittest.TestCase):
@@ -55,6 +60,28 @@ class PlanF3Tests(unittest.TestCase):
         envelope = self.envelope()
         (self.handoff / 'plan.html').unlink()
         self.assertTrue(planf3.artifacts_valid(envelope, self.run).violations)
+
+    def test_team_accepts_declared_sibling_paths_relative_to_repo(self):
+        team = self.root / 'teams/engineering'
+        team.mkdir(parents=True)
+        (team / 'PLAN.md').write_text('- [ ] Read `app.py`\n')
+        (team / 'PLAN.html').write_text(HTML)
+        envelope = TeamPlanOutput(status='success', plan_path='teams/engineering/PLAN.md',
+                                  artifacts=['teams/engineering/PLAN.md', 'teams/engineering/PLAN.html'])
+        self.assertEqual(planf3.artifacts_valid(envelope, self.run).violations, [])
+
+    def test_team_rejects_unrelated_html_even_when_it_exists_and_is_complete(self):
+        valid = self.envelope()
+        envelope = TeamPlanOutput(status='success', plan_path=str(self.handoff / 'plan.md'),
+                                  artifacts=[str(self.handoff / 'plan.md'), valid.artifacts[-1]])
+        self.assertTrue(any('companion' in v for v in planf3.artifacts_valid(envelope, self.run).violations))
+
+    def test_team_rejects_unrelated_markdown_in_place_of_plan_path(self):
+        valid = self.envelope()
+        envelope = TeamPlanOutput(status='success', plan_path=str(self.root / 'teams/PLAN.md'),
+                                  artifacts=valid.artifacts)
+        report = planf3.artifacts_valid(envelope, self.run)
+        self.assertTrue(any('team Markdown' in v for v in report.violations))
 
     def test_bundled_skill_is_cwd_independent_and_builds_untouched(self):
         with patch('os.getcwd', return_value='/'):
