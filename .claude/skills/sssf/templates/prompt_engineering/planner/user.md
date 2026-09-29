@@ -26,7 +26,8 @@ Plan the work described in `prompt`.
    - **Copy it, do not retype it.** One bash call does the whole step:
      `mkdir -p specs && cp "<context_handoff_dir>/plan.md" "specs/<adw_id>_<slug>.md"`
      Writing the plan a second time through `write` re-emits every line you already wrote, which costs the whole document again in output tokens and lets the two copies drift.
-3. Emit your `Report` JSON, declaring BOTH paths in `artifacts`.
+3. Create the matching PlanF3 HTML plan as `<context_handoff_dir>/plan.html`, then copy it to `specs/` with the same basename/version as the markdown spec and an `.html` extension. Choose a version unused by both formats. Keep all implementation tasks and verification commands consistent between the two formats.
+4. Emit your `Report` JSON, declaring ALL four paths in `artifacts`.
 
 ## Report
 
@@ -36,10 +37,13 @@ Respond with ONLY valid JSON matching `PlanOutput` — no prose before or after:
 {
   "status": "success",
   "summary": "<one sentence describing the plan>",
-  "artifacts": ["<context_handoff_dir>/plan.md", "specs/<adw_id>_<slug>.md"],
+  "artifacts": ["<context_handoff_dir>/plan.md", "specs/<adw_id>_<slug>.md", "<context_handoff_dir>/plan.html", "specs/<adw_id>_<slug>.html"],
   "commit_message": "<imperative one-line git subject for committing THIS PLAN DOCUMENT, not the work it describes — e.g. 'Add spec for the /health endpoint'>",
   "notes_for_next_agent": "<what the builder must know>"
 }
 ```
 
-Both `artifacts` entries are the paths you ACTUALLY wrote, `_v2` suffix and all. Gates open these files — a name you meant to use fails them.
+All `artifacts` entries are the paths you ACTUALLY wrote, `_v2` suffix and all. Gates open these files — a name you meant to use fails them.
+
+---
+Governed by AGENTS.md.
